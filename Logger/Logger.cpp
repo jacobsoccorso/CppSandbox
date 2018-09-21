@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 #include <ctime>
-#include <memory>
+#include <sstream>
 
 namespace logger
 {
@@ -11,18 +11,20 @@ namespace logger
     Logger::Logger( )
         : mLevel( Logger::DEBUG )
     {
+        mLogFile.open("Jake.log");
     }
 
     // Constructor setting a LoggerLevel
     Logger::Logger( const LoggerLevel & level )
         : mLevel(level)
     {
+        mLogFile.open("Jake.log");
     }
 
     // Destructor
     Logger::~Logger()
     {
-
+        mLogFile.close();
     }
 
     // Set the log level
@@ -69,19 +71,15 @@ namespace logger
         {
         case LoggerLevel::DEBUG :
             return "DEBUG";
-            break;
         case LoggerLevel::INFO :
-            return "DEBUG";
-            break;
+            return "INFO";
         case LoggerLevel::WARN :
-            return "DEBUG";
-            break;
+            return "WARN";
         case LoggerLevel::ERROR :
-            return "DEBUG";
-            break;
+            return "ERROR";
+        default:
+            return "UNKNOWN";
         }
-
-        return "UNKNOWN";
     }
 
     /*
@@ -92,14 +90,25 @@ namespace logger
     {
         if (!isLevelEnabled(level))
         {
+            // Don't log message if level isn't enabled
             return false;
         }
 
-        /*std::time_t currentTime = std::time(nullptr);
-        std::unique_ptr<tm> gmtm( std::gmtime(&currentTime) );
-        char* dt = std::asctime( gmtm.get() );*/
+        // Construct current time string
+        std::time_t currentTime = std::time(nullptr);
+        struct tm * gmtm = std::gmtime(&currentTime);
+        char buffer[21];
+        std::strftime(buffer, sizeof(buffer), "%FT%TZ", gmtm);
         
-        std::cout << /*gmtm->tm_year << " " <<*/ getLevelAsString() << ": " << message << std::endl;
+        // Construct full log message
+        std::stringstream messageStream;
+        messageStream << buffer
+            << " [" << getLevelAsString() << "] : "
+            << message
+            << std::endl;
+
+        // Log message to file
+        mLogFile << messageStream.str();
 
         return true;
     }
